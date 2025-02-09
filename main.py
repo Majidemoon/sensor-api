@@ -1,8 +1,13 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import SessionLocal, SensorData
 from datetime import datetime, timezone
+import matplotlib.pyplot as plt
+import io
+import tempfile
+
 
 app = FastAPI()
 
@@ -21,16 +26,35 @@ def get_db():
 @app.get("/")
 async def root(db: Session = Depends(get_db)):
     try:
-        sensors = db.query(SensorData).all()
-        return [
-            {
-                "temperature": s.temperature,
-                "humidity": s.humidity,
-                "pressure": s.pressure,
-                "timestamp": s.timestamp.isoformat()
-            }
-            for s in sensors
-        ]
+        # Fetch values from database
+        sensor = db.query(SensorData).all()
+        timestamps = [s.timestamp for s in sensor]
+        temperatures = [s.temperature for s in sensor]
+        humidity = [s.humidity for s in sensor]
+        pressure = [s.pressure for s in sensor]
+
+        # Create Chart from values
+        plt.figure(figsize=(10, 6))
+        plt.plot(timestamps, temperatures, label="Temperature (°C)", marker="o")
+        plt.plot(timestamps, humidity, label="Humidity (%)", marker="s")
+        plt.plot(timestamps, pressure, label="Pressure (hPa)", marker="^")
+
+        # Chart Settings
+        plt.title("Sensor data Over Time")
+        plt.xlabel("Timestamp")
+        plt.ylabel("Value")
+        plt.legend()
+        plt.grid(True)
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+
+        # Save matplotlib as file
+        with tempfile.NamedTemporaryFile(delete=False, suffix="png") as tmpfile:
+            plt.savefig(tmpfile.name, format="png")
+            plt.close()
+            tmpfile_path = tmpfile.name
+
+        return FileResponse(tmpfile_path, media_type="image/png", filename="plot.png")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
