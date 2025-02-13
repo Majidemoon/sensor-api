@@ -2,6 +2,10 @@ import sqlite3
 import random
 from datetime import datetime, timezone, timedelta
 
+"""
+sql file to create fake data
+"""
+
 conn = sqlite3.connect("sensor.db")
 
 cur = conn.cursor()
