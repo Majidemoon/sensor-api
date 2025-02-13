@@ -1,3 +1,4 @@
 # sensor-api
 
-api to get request from microprocessors and shows result with matplotlib 
+simple api to get request from microprocessors with post request
+and create plot with matplotlib and show result with websocket in web page
